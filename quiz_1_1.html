@@ -494,7 +494,7 @@ body {
     <div class="final-detail" id="finalDetail"></div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
       <button class="btn btn-secondary" id="reviewBtn" onclick="openReview()" style="margin:0">❌ 查看错题</button>
-      <button class="btn btn-secondary" id="feedbackSummaryBtn" onclick="openFeedbackSummary()" style="margin:0">⚠️ 反馈汇总</button>
+      <button class="btn btn-secondary" id="feedbackSummaryBtn" onclick="openFeedbackSummary()" style="margin:0;display:none">⚠️ 反馈汇总</button>
       <button class="btn btn-primary" onclick="resetQuiz()" style="margin:0">🔄 重新做题</button>
     </div>
   </div>
@@ -645,6 +645,7 @@ let score = 0;
 let answered = new Array(questions.length).fill(false);
 let userAnswers = new Array(questions.length).fill(null);
 let revealed = new Array(questions.length).fill(false);
+let feedbackList = []; // 存储所有反馈 { questionNum, questionText, feedback }
 
 // ====== 密码验证 ======
 // ⬇️ 在这里修改你的密码（建议改成复杂一点的）
@@ -1038,8 +1039,6 @@ function openFeedbackSummary() {
 function closeFeedbackSummary() {
   document.getElementById('feedbackSummaryModal').classList.remove('show');
 }
-
-let feedbackList = []; // 存储所有反馈 { questionNum, questionText, feedback }
 
 function submitFeedback() {
   const text = document.getElementById('feedbackText').value.trim();
