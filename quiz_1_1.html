@@ -716,8 +716,8 @@ function renderQuestion() {
     let correctCount = 0;
     let wrongCount = 0;
     answered.forEach((a, i) => {
-      const ua = userAnswers[i];
-      const ca = questions[i].answer;
+      const ua = (userAnswers[i] || []).slice().sort();
+      const ca = questions[i].answer.slice().sort();
       if (JSON.stringify(ua) === JSON.stringify(ca)) correctCount++;
       else wrongCount++;
     });
@@ -972,7 +972,7 @@ function openReview() {
   questions.forEach((q, i) => {
     const ua = userAnswers[i];
     const ca = q.answer;
-    const isCorrect = JSON.stringify(ua) === JSON.stringify(ca);
+    const isCorrect = JSON.stringify((ua || []).slice().sort()) === JSON.stringify(ca.slice().sort());
     if (isCorrect) return;
     hasWrong = true;
     
