@@ -354,9 +354,101 @@ body {
   color: #38a169;
   font-size: 18px;
 }
+.fb-item {
+  background: #fffff0;
+  border: 1px solid #fefcbf;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.fb-item:last-child { margin-bottom: 0; }
+.fb-item .fb-q {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.fb-item .fb-content {
+  font-size: 13px;
+  color: #c05621;
+  background: rgba(237, 137, 54, 0.08);
+  padding: 10px 14px;
+  border-radius: 8px;
+  line-height: 1.6;
+}
+/* 密码登录层 */
+.password-overlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+.password-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.password-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.password-card .lock-icon { font-size: 48px; margin-bottom: 16px; }
+.password-card h2 { font-size: 20px; color: #2d3748; margin-bottom: 6px; }
+.password-card p { font-size: 14px; color: #a0aec0; margin-bottom: 24px; }
+.password-card input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  text-align: center;
+  letter-spacing: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.password-card input:focus { border-color: #667eea; }
+.password-card .pw-error { color: #e53e3e; font-size: 13px; margin-top: 10px; min-height: 20px; }
+.password-card .pw-btn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.password-card .pw-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(102,126,234,0.4); }
+.password-card .pw-btn:active { transform: translateY(0); }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
 </style>
 </head>
 <body>
+
+<!-- 密码验证层 -->
+<div class="password-overlay" id="passwordOverlay">
+  <div class="password-card">
+    <div class="lock-icon">🔒</div>
+    <h2>请输入访问密码</h2>
+    <p>本页面仅限授权用户使用</p>
+    <input type="password" id="pwInput" placeholder="请输入密码" autocomplete="off">
+    <div class="pw-error" id="pwError"></div>
+    <button class="pw-btn" onclick="checkPassword()">进 入</button>
+  </div>
+</div>
+
 <div class="container">
   <!-- 顶部状态栏 -->
   <div class="top-bar">
@@ -402,6 +494,7 @@ body {
     <div class="final-detail" id="finalDetail"></div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
       <button class="btn btn-secondary" id="reviewBtn" onclick="openReview()" style="margin:0">❌ 查看错题</button>
+      <button class="btn btn-secondary" id="feedbackSummaryBtn" onclick="openFeedbackSummary()" style="margin:0">⚠️ 反馈汇总</button>
       <button class="btn btn-primary" onclick="resetQuiz()" style="margin:0">🔄 重新做题</button>
     </div>
   </div>
@@ -428,6 +521,17 @@ body {
       <button class="review-close" onclick="closeReview()">✕</button>
     </div>
     <div class="review-list" id="reviewList"></div>
+  </div>
+</div>
+
+<!-- 反馈汇总弹窗 -->
+<div class="modal-overlay" id="feedbackSummaryModal">
+  <div class="review-modal">
+    <div class="review-header">
+      <h3>⚠️ 反馈汇总</h3>
+      <button class="review-close" onclick="closeFeedbackSummary()">✕</button>
+    </div>
+    <div class="review-list" id="feedbackSummaryList"></div>
   </div>
 </div>
 
@@ -542,6 +646,48 @@ let answered = new Array(questions.length).fill(false);
 let userAnswers = new Array(questions.length).fill(null);
 let revealed = new Array(questions.length).fill(false);
 
+// ====== 密码验证 ======
+// ⬇️ 在这里修改你的密码（建议改成复杂一点的）
+const ACCESS_PASSWORD = '123456';
+
+function checkPassword() {
+  const input = document.getElementById('pwInput');
+  const error = document.getElementById('pwError');
+  if (input.value === ACCESS_PASSWORD) {
+    document.getElementById('passwordOverlay').classList.add('hidden');
+    document.body.style.overflow = '';
+    // 记住登录状态（当天有效）
+    sessionStorage.setItem('quiz_auth', '1');
+  } else {
+    error.textContent = '密码错误，请重新输入';
+    input.value = '';
+    input.focus();
+    // 抖动效果
+    const card = document.querySelector('.password-card');
+    card.style.animation = 'none';
+    card.offsetHeight; // 触发重绘
+    card.style.animation = 'shake 0.4s ease';
+  }
+}
+
+// 回车键提交
+document.addEventListener('keydown', function(e) {
+  if (!sessionStorage.getItem('quiz_auth') && e.key === 'Enter') {
+    checkPassword();
+  }
+});
+
+// 页面加载时检查是否已登录
+(function() {
+  if (sessionStorage.getItem('quiz_auth')) {
+    document.getElementById('passwordOverlay').classList.add('hidden');
+  } else {
+    document.getElementById('pwInput').focus();
+    // 禁止滚动
+    document.body.style.overflow = 'hidden';
+  }
+})();
+
 function init() {
   const sel = document.getElementById('jumpSelect');
   sel.innerHTML = '';
@@ -578,6 +724,7 @@ function renderQuestion() {
       `总分：${total} 分 | 答对：${correctCount} 题 | 答错：${wrongCount} 题<br>` +
       `正确率：${(correctCount / questions.length * 100).toFixed(0)}%`;
     document.getElementById('reviewBtn').style.display = wrongCount > 0 ? 'inline-block' : 'none';
+    document.getElementById('feedbackSummaryBtn').style.display = feedbackList.length > 0 ? 'inline-block' : 'none';
     return;
   }
 
@@ -869,9 +1016,39 @@ function closeReview() {
   document.getElementById('reviewModal').classList.remove('show');
 }
 
+function openFeedbackSummary() {
+  const list = document.getElementById('feedbackSummaryList');
+  list.innerHTML = '';
+  if (feedbackList.length === 0) {
+    list.innerHTML = '<div class="review-empty">暂无反馈</div>';
+  } else {
+    feedbackList.forEach(fb => {
+      const item = document.createElement('div');
+      item.className = 'fb-item';
+      item.innerHTML = `
+        <div class="fb-q">第 ${fb.questionNum} 题：${fb.questionText}</div>
+        <div class="fb-content">💬 ${fb.feedback}</div>
+      `;
+      list.appendChild(item);
+    });
+  }
+  document.getElementById('feedbackSummaryModal').classList.add('show');
+}
+
+function closeFeedbackSummary() {
+  document.getElementById('feedbackSummaryModal').classList.remove('show');
+}
+
+let feedbackList = []; // 存储所有反馈 { questionNum, questionText, feedback }
+
 function submitFeedback() {
   const text = document.getElementById('feedbackText').value.trim();
   if (!text) { alert('请输入反馈内容'); return; }
+  feedbackList.push({
+    questionNum: currentQ + 1,
+    questionText: questions[currentQ].question,
+    feedback: text
+  });
   alert('感谢您的反馈！我们已记录第 ' + (currentQ + 1) + ' 题的问题，会尽快核实修正。');
   closeFeedback();
 }
