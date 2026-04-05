@@ -282,6 +282,78 @@ body {
   margin-top: 16px;
 }
 .modal-btns .btn { padding: 10px 24px; font-size: 14px; }
+/* 错题汇总弹窗 */
+.review-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 0;
+  width: 92%;
+  max-width: 600px;
+  max-height: 80vh;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: fadeIn 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.review-modal .review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.review-modal .review-header h3 { margin-bottom: 0; font-size: 18px; color: #e53e3e; }
+.review-modal .review-close {
+  width: 32px; height: 32px;
+  border: none; background: #f7fafc;
+  border-radius: 50%; font-size: 18px;
+  cursor: pointer; color: #718096;
+  display: flex; align-items: center; justify-content: center;
+}
+.review-modal .review-close:hover { background: #edf2f7; }
+.review-modal .review-list {
+  padding: 16px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+.review-item {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.review-item:last-child { margin-bottom: 0; }
+.review-item .ri-q {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.review-item .ri-row {
+  font-size: 13px;
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.review-item .ri-user { color: #e53e3e; }
+.review-item .ri-correct { color: #38a169; }
+.review-item .ri-kp {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #fed7d7;
+  line-height: 1.6;
+}
+.review-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #38a169;
+  font-size: 18px;
+}
 </style>
 </head>
 <body>
@@ -328,7 +400,10 @@ body {
     <h2>练习完成！</h2>
     <div class="final-score" id="finalScore">0</div>
     <div class="final-detail" id="finalDetail"></div>
-    <button class="btn btn-primary" onclick="resetQuiz()">重新做题</button>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-secondary" id="reviewBtn" onclick="openReview()" style="margin:0">❌ 查看错题</button>
+      <button class="btn btn-primary" onclick="resetQuiz()" style="margin:0">🔄 重新做题</button>
+    </div>
   </div>
 </div>
 
@@ -342,6 +417,17 @@ body {
       <button class="btn btn-secondary" onclick="closeFeedback()">取消</button>
       <button class="btn btn-primary" onclick="submitFeedback()">提交</button>
     </div>
+  </div>
+</div>
+
+<!-- 错题汇总弹窗 -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="review-modal">
+    <div class="review-header">
+      <h3>❌ 错题汇总</h3>
+      <button class="review-close" onclick="closeReview()">✕</button>
+    </div>
+    <div class="review-list" id="reviewList"></div>
   </div>
 </div>
 
@@ -491,6 +577,7 @@ function renderQuestion() {
     document.getElementById('finalDetail').innerHTML = 
       `总分：${total} 分 | 答对：${correctCount} 题 | 答错：${wrongCount} 题<br>` +
       `正确率：${(correctCount / questions.length * 100).toFixed(0)}%`;
+    document.getElementById('reviewBtn').style.display = wrongCount > 0 ? 'inline-block' : 'none';
     return;
   }
 
@@ -727,6 +814,59 @@ function openFeedback() {
 
 function closeFeedback() {
   document.getElementById('feedbackModal').classList.remove('show');
+}
+
+function openReview() {
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '';
+  let hasWrong = false;
+  
+  questions.forEach((q, i) => {
+    const ua = userAnswers[i];
+    const ca = q.answer;
+    const isCorrect = JSON.stringify(ua) === JSON.stringify(ca);
+    if (isCorrect) return;
+    hasWrong = true;
+    
+    const userLetters = (ua || []).map(idx => optLabels[idx]).join('');
+    const correctLetters = ca.map(idx => optLabels[idx]).join('');
+    
+    const item = document.createElement('div');
+    item.className = 'review-item';
+    let html = `<div class="ri-q">第 ${i + 1} 题（${q.type === 'single' ? '单选' : '多选'}）：${q.question}</div>`;
+    html += `<div class="ri-row ri-user">❌ 你的答案：${userLetters || '未作答'}</div>`;
+    html += `<div class="ri-row ri-correct">✅ 正确答案：${correctLetters}</div>`;
+    if (q.knowledge) {
+      html += `<div class="ri-kp">📌 ${q.knowledge}</div>`;
+    }
+    if (q.page) {
+      html += `<div class="ri-kp">📖 ${q.page}</div>`;
+    }
+    if (q.memory) {
+      html += `<div class="ri-kp">💡 记忆技巧：${q.memory}</div>`;
+    }
+    item.innerHTML = html;
+    
+    // 点击跳转到该题
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => {
+      closeReview();
+      currentQ = i;
+      renderQuestion();
+    });
+    
+    list.appendChild(item);
+  });
+  
+  if (!hasWrong) {
+    list.innerHTML = '<div class="review-empty">🎉 全部正确，没有错题！</div>';
+  }
+  
+  document.getElementById('reviewModal').classList.add('show');
+}
+
+function closeReview() {
+  document.getElementById('reviewModal').classList.remove('show');
 }
 
 function submitFeedback() {
