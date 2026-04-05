@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.1 工程项目投资管理与实施 - 练习题</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: #2d3748;
+}
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+/* 顶部状态栏 */
+.top-bar {
+  background: rgba(255,255,255,0.95);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  backdrop-filter: blur(10px);
+}
+.top-bar h1 {
+  font-size: 18px;
+  color: #4a5568;
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+.stats-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.progress-info {
+  flex: 1;
+  min-width: 200px;
+}
+.progress-text {
+  font-size: 14px;
+  color: #718096;
+  margin-bottom: 6px;
+}
+.progress-text span { font-weight: 700; color: #5a67d8; }
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+.score-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f6ad55, #ed8936);
+  color: white;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.score-box .label { font-weight: 400; font-size: 13px; opacity: 0.9; }
+.jump-select {
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #4a5568;
+  background: #f7fafc;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.jump-select:focus { border-color: #667eea; }
+/* 题目卡片 */
+.question-card {
+  background: rgba(255,255,255,0.97);
+  border-radius: 16px;
+  padding: 28px 28px 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+.q-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.q-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+.q-badge.single { background: linear-gradient(135deg, #48bb78, #38a169); }
+.q-badge.multi { background: linear-gradient(135deg, #4299e1, #3182ce); }
+.q-score {
+  font-size: 12px;
+  color: #a0aec0;
+}
+.q-number {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4a5568;
+  margin-bottom: 14px;
+}
+.q-text {
+  font-size: 16px;
+  line-height: 1.75;
+  color: #2d3748;
+  margin-bottom: 20px;
+}
+/* 选项 */
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.option:hover { border-color: #a3bffa; background: #f7faff; }
+.option.selected { border-color: #5a67d8; background: #ebf4ff; }
+.option.correct { border-color: #48bb78; background: #f0fff4; }
+.option.wrong { border-color: #fc8181; background: #fff5f5; }
+.option.reveal-correct { border-color: #48bb78; background: #f0fff4; }
+.option.disabled { pointer-events: none; }
+.opt-label {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  border: 2px solid #cbd5e0;
+  color: #718096;
+  transition: all 0.2s;
+}
+.option.selected .opt-label { background: #5a67d8; color: white; border-color: #5a67d8; }
+.option.correct .opt-label { background: #48bb78; color: white; border-color: #48bb78; }
+.option.wrong .opt-label { background: #fc8181; color: white; border-color: #fc8181; }
+.option.reveal-correct .opt-label { background: #48bb78; color: white; border-color: #48bb78; }
+.opt-text { font-size: 15px; line-height: 1.6; padding-top: 2px; color: #4a5568; }
+.opt-icon {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  margin-left: auto;
+}
+.option.correct .opt-icon { display: flex; background: #48bb78; }
+.option.wrong .opt-icon { display: flex; background: #fc8181; }
+/* 解析区域 */
+.explanation {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: #f7fafc;
+  border-left: 4px solid #5a67d8;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.explanation.show { display: block; }
+.explanation .exp-title {
+  font-size: 14px; font-weight: 700; color: #5a67d8; margin-bottom: 8px;
+}
+.explanation .exp-answer { font-size: 15px; color: #2d3748; margin-bottom: 6px; }
+.explanation .exp-answer span { font-weight: 700; }
+.explanation .exp-score { font-size: 14px; color: #718096; }
+.explanation .exp-knowledge { font-size: 14px; color: #553c9a; margin-top: 10px; line-height: 1.7; padding: 10px 14px; background: #faf5ff; border-radius: 8px; border-left: 3px solid #9f7aea; }
+.explanation .exp-knowledge .kp-title { font-weight: 700; color: #6b46c1; }
+.explanation .exp-memory { font-size: 14px; color: #975a16; margin-top: 10px; line-height: 1.7; padding: 10px 14px; background: #fffff0; border-radius: 8px; border-left: 3px solid #ecc94b; }
+.explanation .exp-memory .mm-title { font-weight: 700; color: #975a16; }
+.explanation .exp-page { font-size: 13px; color: #a0aec0; margin-top: 6px; }
+/* 按钮区域 */
+.btn-area {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: flex-end;
+}
+.btn {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-secondary {
+  background: #fff;
+  color: #e53e3e;
+  border: 2px solid #fed7d7;
+}
+.btn-secondary:hover { background: #fff5f5; border-color: #fc8181; }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+/* 完成页面 */
+.finish-card {
+  background: rgba(255,255,255,0.97);
+  border-radius: 16px;
+  padding: 48px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  text-align: center;
+  display: none;
+}
+.finish-card.show { display: block; }
+.finish-card .trophy { font-size: 64px; margin-bottom: 16px; }
+.finish-card h2 { font-size: 24px; color: #2d3748; margin-bottom: 8px; }
+.finish-card .final-score { font-size: 48px; font-weight: 800; color: #5a67d8; margin: 16px 0; }
+.finish-card .final-detail { font-size: 14px; color: #718096; margin-bottom: 24px; line-height: 1.8; }
+.finish-card .btn { margin: 0 auto; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+/* 反馈弹窗 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  width: 90%;
+  max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: fadeIn 0.25s ease;
+}
+.modal h3 { font-size: 18px; color: #2d3748; margin-bottom: 16px; }
+.modal textarea {
+  width: 100%;
+  height: 120px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+}
+.modal textarea:focus { border-color: #667eea; }
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.modal-btns .btn { padding: 10px 24px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- 顶部状态栏 -->
+  <div class="top-bar">
+    <h1>📐 1.1 工程项目投资管理与实施</h1>
+    <div class="stats-row">
+      <div class="progress-info">
+        <div class="progress-text">做题进度：<span id="currentNum">1</span> / <span id="totalNum">10</span></div>
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+      </div>
+      <div class="score-box"><span class="label">得分</span><span id="scoreDisplay">0</span></div>
+      <select class="jump-select" id="jumpSelect" title="跳转到指定题目"></select>
+    </div>
+  </div>
+
+  <!-- 题目卡片 -->
+  <div class="question-card" id="questionCard">
+    <div class="q-header">
+      <span class="q-badge" id="qBadge">单选题</span>
+      <span class="q-score" id="qScoreText"></span>
+    </div>
+    <div class="q-number" id="qNumber"></div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="optionsContainer"></div>
+    <div class="explanation" id="explanation">
+      <div class="exp-title">📝 解析</div>
+      <div class="exp-answer" id="expAnswer"></div>
+      <div class="exp-score" id="expScore"></div>
+      <div class="exp-knowledge" id="expKnowledge"></div>
+      <div class="exp-memory" id="expMemory"></div>
+      <div class="exp-page" id="expPage"></div>
+    </div>
+    <div class="btn-area">
+      <button class="btn btn-secondary" id="feedbackBtn" style="display:none" onclick="openFeedback()">⚠️ 题目/答案反馈</button>
+      <button class="btn btn-primary" id="confirmBtn" onclick="confirmAnswer()">确定</button>
+    </div>
+  </div>
+
+  <!-- 完成页面 -->
+  <div class="finish-card" id="finishCard">
+    <div class="trophy">🎉</div>
+    <h2>练习完成！</h2>
+    <div class="final-score" id="finalScore">0</div>
+    <div class="final-detail" id="finalDetail"></div>
+    <button class="btn btn-primary" onclick="resetQuiz()">重新做题</button>
+  </div>
+</div>
+
+<!-- 反馈弹窗 -->
+<div class="modal-overlay" id="feedbackModal">
+  <div class="modal">
+    <h3>⚠️ 题目/答案反馈</h3>
+    <p style="font-size:14px;color:#718096;margin-bottom:12px;">请描述您认为有误的题目或答案，我们会尽快核实修正。</p>
+    <textarea id="feedbackText" placeholder="请输入您发现的问题..."></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeFeedback()">取消</button>
+      <button class="btn btn-primary" onclick="submitFeedback()">提交</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    type: 'single',
+    question: '项目资本金是指在项目总投资中由投资者认缴的出资额，对银行等金融机构而言，项目资本金可视为项目法人进行（）的信用基础。',
+    options: ['股权融资', '债务融资', '债券融资', '租赁融资'],
+    answer: [1],
+    page: '教材第10页',
+    knowledge: '【项目资本金的性质】项目资本金属于非债务性资金，项目法人不承担这部分资金的任何利息和债务。投资者可按其出资比例依法享有所有者权益，也可转让其出资，但不得以任何方式抽回。对于银行等金融机构或资本市场的投资者而言，项目资本金可视为项目法人进行债务融资的信用基础。',
+    memory: '【口诀】"资本金，非债务，不付利息不还款；可转让，不可撤，银行看它当信用。"\n关键词串联：认缴出资 → 非债务性 → 不担利息债务 → 可转让不可抽回 → 债务融资信用基础。联想记忆：银行贷款给项目，就像你买房付首付一样，首付比例越高银行越放心。',
+    explanation: '项目资本金属于非债务性资金，项目法人不承担这部分资金的任何利息和债务。对于银行等金融机构或资本市场的投资者而言，项目资本金可视为项目法人进行债务融资的信用基础。'
+  },
+  {
+    type: 'single',
+    question: '除国家对采用高新技术成果有特别规定外，以工业产权、非专利技术作价出资的比例不得超过投资项目资本金总额的（）。',
+    options: ['10%', '20%', '25%', '30%'],
+    answer: [1],
+    page: '教材第10页',
+    knowledge: '【项目资本金出资形式与比例】项目资本金可以用货币出资，也可以用实物、工业产权、非专利技术、土地使用权作价出资。对作为资本金的实物、工业产权、非专利技术、土地使用权，必须经过有资格的资产评估机构依照法律法规评估作价，不得高估或低估。除国家对采用高新技术成果有特别规定外，以工业产权、非专利技术作价出资的比例不得超过投资项目资本金总额的20%。',
+    memory: '【口诀】"出资五种式，无形不过两。"\n五种出资：货币、实物、工业产权、非专利技术、土地使用权。无形资产（工业产权+非专利技术）上限20%。联想记忆：一建考试中"20%"是高频数字，考到项目资本金出资比例就是20%没跑。需评估、不高估不低估。',
+    explanation: '对作为资本金的实物、工业产权、非专利技术、土地使用权，必须经过有资格的资产评估机构依照法律法规评估作价。除国家对采用高新技术成果有特别规定外，以工业产权、非专利技术作价出资的比例不得超过投资项目资本金总额的20%。'
+  },
+  {
+    type: 'multi',
+    question: '根据《国务院关于投资体制改革的决定》，政府投资项目实行审批制，对于企业不使用政府投资建设的项目，区别不同情况实行（）。',
+    options: ['审批制', '核准制', '备案制', '评估制', '审核制'],
+    answer: [1, 2],
+    page: '教材第11页',
+    knowledge: '【投资体制审批/核准/备案管理】根据《国务院关于投资体制改革的决定》（国发〔2004〕20号），按照"谁投资、谁决策、谁收益、谁承担风险"的原则，政府投资项目实行审批制，对于企业不使用政府投资建设的项目，一律不再实行审批制，区别不同情况实行核准制或备案制。即：政府投资项目→审批制；关系国家安全、重大公共利益等企业项目→核准制；其他企业项目→备案制。',
+    memory: '【口诀】"政府审批、企业不审批，大的核准、小的备案。"\n分类记忆法：政府出钱→审批（最严）；企业出钱但关系重大→核准（中等）；企业出钱且一般项目→备案（最松）。陷阱：企业项目一律不再审批！多选题看到"审批制"要排除。核心理念："谁投资、谁决策、谁收益、谁承担风险"。',
+    explanation: '按照"谁投资、谁决策、谁收益、谁承担风险"的原则，政府投资项目实行审批制。对于企业不使用政府投资建设的项目，一律不再实行审批制，区别不同情况实行核准制或备案制。'
+  },
+  {
+    type: 'single',
+    question: '政府投资项目初步设计提出的投资概算超过经批准的可行性研究报告提出的投资估算（）的，项目单位应当向投资主管部门报告。',
+    options: ['5%', '10%', '15%', '20%'],
+    answer: [1],
+    page: '教材第13页',
+    knowledge: '【政府投资项目概算超估算的处理】根据《政府投资条例》规定，政府投资项目初步设计提出的投资概算超过经批准的可行性研究报告提出的投资估算10%的，项目单位应当向投资主管部门或者其他有关部门报告，投资主管部门或者其他有关部门可以要求项目单位重新报送可行性研究报告。这是"估算控制概算"原则的具体体现。',
+    memory: '【数字记忆法】"概算超估算，百分之十要报告。"\n记忆链：投资估算（可研阶段）→投资概算（初设阶段）→超10%→报告。考试常见数字对比记忆：概算超估算10%要报告，不是5%、15%、20%。联想："十一"黄金周报告 = 概算超估算10%要报告。',
+    explanation: '根据《政府投资条例》规定，政府投资项目初步设计提出的投资概算超过经批准的可行性研究报告提出的投资估算10%的，项目单位应当向投资主管部门或者其他有关部门报告。'
+  },
+  {
+    type: 'single',
+    question: 'BOT模式中，项目公司在特许经营期届满后应将项目移交给（）。',
+    options: ['建设单位', '施工单位', '项目所在国政府或其指定机构', '投资财团'],
+    answer: [2],
+    page: '教材第16页',
+    knowledge: '【BOT模式运作流程】标准BOT（建设—经营—移交）：投资财团愿意自己融资建设某项基础设施，并在项目所在国政府授予的特许期内经营该公共设施，以经营收入抵偿建设投资并获得一定收益，经营期届满后将此基础设施移交给项目所在国政府。BOT运作流程：A.特许权协议 → B.融资安排 → C.开发建设 → D.项目经营 → E.项目移交。',
+    memory: '【拆字记忆法】B-O-T = 建设(Build)-经营(Operate)-移交(Transfer)，终点一定是政府。联想：BOT像"机器人"，建好了替政府干活，干完还回去。BOT五种变体记忆：BOT→标准版；BOOT→多一个O(Own)多拥有；BOO→多一个O(Own)不归还；TOT→移交(Transform)-经营-移交，无建设阶段。',
+    explanation: '标准BOT（建设—经营—移交）：投资财团融资建设某项基础设施，在政府授予的特许期内经营该设施，经营期届满后将此基础设施移交给项目所在国政府。'
+  },
+  {
+    type: 'multi',
+    question: 'BOOT与标准BOT相比，其主要区别包括（）。',
+    options: ['BOOT在特许期内既拥有经营权，又拥有所有权', 'BOOT的特许期比BOT的长', 'BOOT不需要融资', 'BOOT项目公司可以将项目资产抵押给银行', 'BOOT最终不移交项目'],
+    answer: [0, 1, 3],
+    page: '教材第16页',
+    knowledge: '【BOOT与BOT的区别】BOOT（建设—拥有一经营—移交）与标准BOT相比，有三个主要区别：①BOOT在特许期内既拥有经营权，又拥有所有权；②BOOT的特许期要比BOT的长一些；③政府允许BOOT项目公司在一定范围和一定时期内将项目资产抵押给银行，以便获得更优惠的贷款条件。两者的共同点是：经营期届满后均需将项目移交给政府。"BOOT不需要融资"和"BOOT最终不移交项目"都是错误的。',
+    memory: '【对比记忆法】"BOOT比BOT多一\'O\'（Own），多拥有、多期限、可抵押，但终要还。"\n表格对比法：\n| 对比项 | BOT | BOOT |\n| 所有权 | 无 | 有（特许期内） |\n| 期限 | 较短 | 较长 |\n| 抵押 | 不行 | 可以 |\n| 最终归属 | 移交政府 | 移交政府 |\n陷阱排除："不需要融资"和"不移交"都是干扰项！',
+    explanation: 'BOOT（建设—拥有一经营—移交）与标准BOT相比：BOOT在特许期内既拥有经营权又拥有所有权，政府允许项目公司在一定范围内将项目资产抵押给银行以获得更优惠贷款，BOOT的特许期要比BOT长。两者都是在期满后移交。'
+  },
+  {
+    type: 'single',
+    question: 'DB/EPC工程总承包模式的核心优势之一是使工程项目责任主体（），有利于减少争议和索赔。',
+    options: ['多元化', '单一化', '复杂化', '分散化'],
+    answer: [1],
+    page: '教材第19-20页',
+    knowledge: '【工程总承包模式的优点】DB/EPC工程总承包模式的主要优点：①有利于缩短建设工期（设计与施工由同一方负责，沟通改善，可提前开始采购和部分施工）；②便于建设单位提前确定工程造价（通常签订总价合同）；③使工程项目责任主体单一化，减少争议和索赔；④可减轻建设单位合同管理的负担。不足：道德风险高、建设单位前期工作量大、总承包单位报价可能偏高。',
+    memory: '【口诀】"工总四优：短工期、定造价、单责任、轻负担。"\n关键词记忆：短（缩短工期）→定（确定造价）→单（单一责任）→轻（减轻负担）。DB=EPC（设计+采购+施工打包）。反向记忆不足之处：道德风险高（一包到底缺少监督）、前期工作量大（要提前说清楚需求）、报价偏高（承包方要为风险加价）。',
+    explanation: '工程总承包模式的优点包括：有利于缩短建设工期、便于建设单位提前确定工程造价、使工程项目责任主体单一化、可减轻建设单位合同管理的负担。由工程总承包单位负责工程设计和施工，减少了工程实施过程中争议和索赔的发生。'
+  },
+  {
+    type: 'multi',
+    question: '根据《建设工程质量管理条例》，下列建设工程必须实行监理的有（）。',
+    options: ['国家重点建设工程', '大中型公用事业工程', '成片开发建设的住宅小区工程', '所有私人住宅装修工程', '利用外国政府或国际组织贷款、援助资金的工程'],
+    answer: [0, 1, 2, 4],
+    page: '教材第24页',
+    knowledge: '【强制监理的工程范围】根据《建设工程质量管理条例》，必须实行监理的工程范围：①国家重点建设工程；②大中型公用事业工程（总投资额3000万元以上）；③成片开发建设的住宅小区工程（建筑面积5万m²以上）；④利用外国政府或者国际组织贷款、援助资金的工程；⑤国家规定必须实行监理的其他工程。"所有私人住宅装修工程"不属于法定强制监理范围。',
+    memory: '【口诀】"国家重点、大中公用、成片住宅、外资贷款、兜底其他。"\n数字记忆搭配：大中型公用→3000万以上；成片住宅→5万m²以上。注意："所有私人住宅装修"是常见干扰项，它不属于法定强制监理范围！联想记忆：监理的"五大金刚"——重点、公用、住宅、外资、兜底。',
+    explanation: '必须实行监理的工程范围包括：①国家重点建设工程；②大中型公用事业工程；③成片开发建设的住宅小区工程；④利用外国政府或者国际组织贷款、援助资金的工程；⑤国家规定必须实行监理的其他工程。'
+  },
+  {
+    type: 'single',
+    question: '大中型公用事业工程是指项目总投资额在（）以上的市政、科技教育、体育旅游、卫生社会福利等工程项目。',
+    options: ['1000万元', '2000万元', '3000万元', '5000万元'],
+    answer: [2],
+    page: '教材第25页',
+    knowledge: '【大中型公用事业工程的标准】大中型公用事业工程是指项目总投资额在3000万元以上的工程项目，包括：供水、供电、供气、供热等市政工程项目；科技、教育、文化等项目；体育、旅游、商业等项目；卫生、社会福利等项目；其他公用事业项目。注意这个"3000万元"是常考数字，同时也是国家规定必须实行监理的其他工程中基础设施项目的投资标准。',
+    memory: '【数字联想记忆】"三千万做大事"\n3000万 = 大中型公用事业的分界线。市政"四供"（水电气热）+科教文+体旅商+卫社福=大中型公用事业。考试技巧：看到"大中型"就要想到3000万。配套数字记忆：3000万（大中型公用事业）vs 5万m²（成片住宅小区），一金额一面积，别混淆。',
+    explanation: '大中型公用事业工程是指项目总投资额在3000万元以上的下列工程项目：供水供电供气供热等市政工程项目；科技、教育、文化等项目；体育、旅游、商业等项目；卫生、社会福利等项目等。'
+  },
+  {
+    type: 'multi',
+    question: '根据《建设工程监理规范》GB/T 50319-2013，总监理工程师不得将下列工作委托给总监理工程师代表（）。',
+    options: ['组织编制监理规划，审批监理实施细则', '组织召开监理例会', '签发工程开工令、暂停令和复工令', '签发工程款支付证书，组织审核竣工结算', '调解建设单位与施工单位的合同争议'],
+    answer: [0, 2, 3, 4],
+    page: '教材第26页',
+    knowledge: '【总监理工程师不得委托的工作（高频考点）】总监理工程师不得将以下8项工作委托给总监理工程师代表：①组织编制监理规划，审批监理实施细则；②根据工程进展及监理工作情况调配监理人员；③组织审查施工组织设计、（专项）施工方案；④签发工程开工令、暂停令和复工令；⑤签发工程款支付证书，组织审核竣工结算；⑥调解建设单位与施工单位的合同争议，处理工程索赔；⑦审查施工单位的竣工申请，组织工程竣工预验收，组织编写工程质量评估报告，参与工程竣工验收；⑧参与或配合工程质量安全事故的调查和处理。注意："组织召开监理例会"不属于不得委托范围，是可以委托的。',
+    memory: '【口诀】"总监管八件大事：一规划、二调配、三审查、四签令、五签钱、六调解、七验收、八事故。"\n速记口诀："规调审，令钱调验事"（谐音：怪调审，令钱找验尸）。8大不可委托事项按动词+对象记忆：编规划、调人员、审方案、签三令（开工/暂停/复工）、签支付、调争议+索赔、审竣工+预验收、配事故。可委托的典型："召开监理例会"是可以委托的，考试常设陷阱！',
+    explanation: '总监理工程师不得委托给总监理工程师代表的工作包括：①组织编制监理规划，审批监理实施细则；②根据工程进展及监理工作情况调配监理人员；③组织审查施工组织设计、（专项）施工方案；④签发工程开工令、暂停令和复工令；⑤签发工程款支付证书，组织审核竣工结算；⑥调解建设单位与施工单位的合同争议，处理工程索赔；⑦审查施工单位的竣工申请，组织工程竣工预验收等；⑧参与或配合工程质量安全事故的调查和处理。注意"组织召开监理例会"是可以委托的。'
+  }
+];
+
+const optLabels = ['A', 'B', 'C', 'D', 'E'];
+let currentQ = 0;
+let score = 0;
+let answered = new Array(questions.length).fill(false);
+let userAnswers = new Array(questions.length).fill(null);
+let revealed = new Array(questions.length).fill(false);
+
+function init() {
+  const sel = document.getElementById('jumpSelect');
+  sel.innerHTML = '';
+  questions.forEach((q, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `第 ${i + 1} 题（${q.type === 'single' ? '单选' : '多选'}）`;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => jumpTo(parseInt(sel.value)));
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const card = document.getElementById('questionCard');
+  const finish = document.getElementById('finishCard');
+  
+  // Check if all answered
+  if (answered.every(a => a)) {
+    card.style.display = 'none';
+    finish.classList.add('show');
+    document.getElementById('finalScore').textContent = score + ' 分';
+    const total = questions.reduce((s, q) => s + (q.type === 'single' ? 1 : 2), 0);
+    let correctCount = 0;
+    let wrongCount = 0;
+    answered.forEach((a, i) => {
+      const ua = userAnswers[i];
+      const ca = questions[i].answer;
+      if (JSON.stringify(ua) === JSON.stringify(ca)) correctCount++;
+      else wrongCount++;
+    });
+    document.getElementById('finalDetail').innerHTML = 
+      `总分：${total} 分 | 答对：${correctCount} 题 | 答错：${wrongCount} 题<br>` +
+      `正确率：${(correctCount / questions.length * 100).toFixed(0)}%`;
+    return;
+  }
+
+  card.style.display = 'block';
+  finish.classList.remove('show');
+
+  // Badge
+  const badge = document.getElementById('qBadge');
+  badge.textContent = q.type === 'single' ? '单选题' : '多选题';
+  badge.className = 'q-badge ' + (q.type === 'single' ? 'single' : 'multi');
+  
+  document.getElementById('qScoreText').textContent = q.type === 'single' ? '选对得 1 分' : '选对一个 0.5 分，全对得 2 分';
+  document.getElementById('qNumber').textContent = `第 ${currentQ + 1} 题`;
+  document.getElementById('qText').textContent = q.question;
+
+  // Options
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.dataset.index = i;
+    
+    const selected = userAnswers[currentQ] && userAnswers[currentQ].includes(i);
+    if (selected && !revealed[currentQ]) div.classList.add('selected');
+    
+    div.innerHTML = `
+      <span class="opt-label">${optLabels[i]}</span>
+      <span class="opt-text">${opt}</span>
+      <span class="opt-icon"></span>
+    `;
+    div.addEventListener('click', () => toggleOption(i));
+    container.appendChild(div);
+  });
+
+  // If already answered, show result
+  if (revealed[currentQ]) {
+    showResult();
+  }
+
+  // Buttons
+  const confirmBtn = document.getElementById('confirmBtn');
+  const feedbackBtn = document.getElementById('feedbackBtn');
+  
+  if (revealed[currentQ]) {
+    confirmBtn.textContent = '下一题 ▶';
+    confirmBtn.disabled = false;
+    feedbackBtn.style.display = 'inline-block';
+    disableAllOptions();
+  } else {
+    confirmBtn.textContent = '确定';
+    const sel = userAnswers[currentQ];
+    confirmBtn.disabled = !sel || sel.length === 0;
+    feedbackBtn.style.display = 'none';
+  }
+
+  // Explanation
+  const exp = document.getElementById('explanation');
+  if (!revealed[currentQ]) {
+    exp.classList.remove('show');
+    document.getElementById('expKnowledge').style.display = 'none';
+    document.getElementById('expMemory').style.display = 'none';
+  }
+
+  // Progress
+  const answeredCount = answered.filter(a => a).length;
+  document.getElementById('currentNum').textContent = answeredCount;
+  document.getElementById('progressBar').style.width = (answeredCount / questions.length * 100) + '%';
+  document.getElementById('scoreDisplay').textContent = score;
+  document.getElementById('jumpSelect').value = currentQ;
+}
+
+function toggleOption(index) {
+  if (revealed[currentQ]) return;
+  
+  const q = questions[currentQ];
+  let sel = userAnswers[currentQ] ? [...userAnswers[currentQ]] : [];
+  
+  if (q.type === 'single') {
+    sel = [index];
+  } else {
+    // Multi: can't select all 5
+    const idx = sel.indexOf(index);
+    if (idx > -1) {
+      sel.splice(idx, 1);
+    } else {
+      if (sel.length >= 4) return; // max 4 selections for multi
+      sel.push(index);
+    }
+  }
+  
+  userAnswers[currentQ] = sel;
+  
+  // Update UI
+  const options = document.querySelectorAll('.option');
+  options.forEach((opt, i) => {
+    opt.classList.remove('selected', 'correct', 'wrong', 'reveal-correct');
+    if (sel.includes(i)) opt.classList.add('selected');
+  });
+
+  document.getElementById('confirmBtn').disabled = sel.length === 0;
+}
+
+function confirmAnswer() {
+  if (revealed[currentQ]) {
+    // Next question
+    nextQuestion();
+    return;
+  }
+
+  const q = questions[currentQ];
+  const sel = userAnswers[currentQ];
+  if (!sel || sel.length === 0) return;
+
+  answered[currentQ] = true;
+  revealed[currentQ] = true;
+
+  // Calculate score
+  const correct = q.answer;
+  let isCorrect = JSON.stringify(sel.slice().sort()) === JSON.stringify(correct.slice().sort());
+  let earned = 0;
+  
+  if (q.type === 'single') {
+    earned = isCorrect ? 1 : 0;
+  } else {
+    if (isCorrect) {
+      earned = 2;
+    } else {
+      // Check if any selected is wrong
+      let hasWrong = sel.some(s => !correct.includes(s));
+      if (hasWrong) {
+        earned = 0;
+      } else {
+        earned = sel.length * 0.5;
+      }
+    }
+  }
+  
+  score += earned;
+  
+  showResult();
+  renderQuestion();
+}
+
+function showResult() {
+  const q = questions[currentQ];
+  const sel = userAnswers[currentQ];
+  const correct = q.answer;
+  const options = document.querySelectorAll('.option');
+  
+  const selSorted = (sel || []).slice().sort();
+  const correctSorted = correct.slice().sort();
+  const isCorrect = JSON.stringify(selSorted) === JSON.stringify(correctSorted);
+  
+  let earned = 0;
+  if (q.type === 'single') {
+    earned = isCorrect ? 1 : 0;
+  } else {
+    if (isCorrect) earned = 2;
+    else {
+      let hasWrong = (sel || []).some(s => !correct.includes(s));
+      earned = hasWrong ? 0 : (sel || []).length * 0.5;
+    }
+  }
+
+  options.forEach((opt, i) => {
+    opt.classList.remove('selected', 'correct', 'wrong', 'reveal-correct');
+    if (sel && sel.includes(i) && correct.includes(i)) {
+      opt.classList.add('correct');
+      opt.querySelector('.opt-icon').textContent = '✓';
+    } else if (sel && sel.includes(i) && !correct.includes(i)) {
+      opt.classList.add('wrong');
+      opt.querySelector('.opt-icon').textContent = '✗';
+    } else if (correct.includes(i) && !(sel && sel.includes(i))) {
+      opt.classList.add('reveal-correct');
+      opt.querySelector('.opt-icon').textContent = '✓';
+    }
+  });
+
+  const exp = document.getElementById('explanation');
+  const correctLetters = correct.map(i => optLabels[i]).join('');
+  document.getElementById('expAnswer').innerHTML = `正确答案：<span>${correctLetters}</span>`;
+  document.getElementById('expScore').textContent = isCorrect 
+    ? (q.type === 'multi' ? '🎉 全部正确！得分：+2 分' : '🎉 回答正确！得分：+1 分')
+    : `得分：+${earned} 分${earned === 0 ? '（存在错误选项）' : ''}`;
+  document.getElementById('expPage').textContent = '📖 ' + q.page;
+  const kpEl = document.getElementById('expKnowledge');
+  if (q.knowledge) {
+    kpEl.innerHTML = '<span class="kp-title">📌 知识点：</span>' + q.knowledge;
+    kpEl.style.display = 'block';
+  } else {
+    kpEl.style.display = 'none';
+  }
+  const mmEl = document.getElementById('expMemory');
+  if (q.memory) {
+    mmEl.innerHTML = '<span class="mm-title">💡 记忆技巧：</span>' + q.memory.replace(/\n/g, '<br>');
+    mmEl.style.display = 'block';
+  } else {
+    mmEl.style.display = 'none';
+  }
+  exp.classList.add('show');
+}
+
+function disableAllOptions() {
+  document.querySelectorAll('.option').forEach(o => o.classList.add('disabled'));
+}
+
+function nextQuestion() {
+  // Find next unanswered
+  let next = -1;
+  for (let i = currentQ + 1; i < questions.length; i++) {
+    if (!answered[i]) { next = i; break; }
+  }
+  if (next === -1) {
+    for (let i = 0; i < currentQ; i++) {
+      if (!answered[i]) { next = i; break; }
+    }
+  }
+  if (next === -1) next = (currentQ + 1) % questions.length;
+  currentQ = next;
+  renderQuestion();
+}
+
+function jumpTo(index) {
+  currentQ = index;
+  renderQuestion();
+}
+
+function openFeedback() {
+  document.getElementById('feedbackModal').classList.add('show');
+  document.getElementById('feedbackText').value = '';
+  document.getElementById('feedbackText').focus();
+}
+
+function closeFeedback() {
+  document.getElementById('feedbackModal').classList.remove('show');
+}
+
+function submitFeedback() {
+  const text = document.getElementById('feedbackText').value.trim();
+  if (!text) { alert('请输入反馈内容'); return; }
+  alert('感谢您的反馈！我们已记录第 ' + (currentQ + 1) + ' 题的问题，会尽快核实修正。');
+  closeFeedback();
+}
+
+function resetQuiz() {
+  currentQ = 0;
+  score = 0;
+  answered = new Array(questions.length).fill(false);
+  userAnswers = new Array(questions.length).fill(null);
+  revealed = new Array(questions.length).fill(false);
+  document.getElementById('finishCard').classList.remove('show');
+  renderQuestion();
+}
+
+init();
+</script>
+</body>
+</html>
